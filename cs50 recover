@@ -1,0 +1,53 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int args, char * argv[])
+{
+    if(args != 2)
+    {
+        fprintf(stderr, "Usage: ./recover image");
+        return 1;
+    }
+    FILE *readFile = fopen(argv[1], "r");
+    if(readFile == NULL)
+    {
+        fprintf(stderr, "Usage: ./recover image");
+        return 2;
+    }
+    //Read 1 block from the input file.
+    int count = 0;
+    char name[8];
+    //Declair two empty file pointer
+    FILE * newFile = NULL;
+    FILE * lastFile = NULL;
+    unsigned char *ptr = (unsigned char *) malloc(sizeof(unsigned char) * 512);
+    while(!feof(readFile))
+    {
+        fread(ptr, 512, 1, readFile);
+        //Check if the block start with the pattern
+        if (ptr[0] == 0xff &&
+            ptr[1] == 0xd8 &&
+            ptr[2] == 0xff &&
+            (ptr[3] & 0xf0) == 0xe0)
+        {
+            if(count > 0)
+            {
+                fclose(lastFile);
+            }
+            sprintf(name, "%03d.jpg", count);
+            newFile = fopen(name, "w");
+            //We need to close the current file if we want to creat another file. assign the current file pointer to lastFile, and close it before creat the new file.
+            lastFile = newFile;
+            fwrite(ptr, 512, 1, newFile);
+            count++;
+        }
+        //if the block is not the start of new file, add the data to current file.
+        else if(newFile != NULL)
+        {
+            fwrite(ptr, 512, 1, newFile);
+        }
+    }
+    free(ptr);
+    fclose(newFile);
+    return 0;
+}
