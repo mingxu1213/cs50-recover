@@ -54,5 +54,4 @@ int main(int args, char * argv[])
     free(ptr);
     fclose(newFile);
     return 0;
-    
 }
